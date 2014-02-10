@@ -1,0 +1,10 @@
+grep "for 0:" all.txt > ./0latency.txt 
+grep "for 1:" all.txt > ./1latency.txt 
+grep "for 2:" all.txt > ./2latency.txt 
+grep "for 3:" all.txt > ./3latency.txt 
+grep "for 4:" all.txt > ./4latency.txt 
+grep "for 5:" all.txt > ./5latency.txt 
+grep "for 6:" all.txt > ./6latency.txt 
+grep "for 7:" all.txt > ./7latency.txt 
+grep "for 8:" all.txt > ./8latency.txt 
+grep "for 9:" all.txt > ./9latency.txt 

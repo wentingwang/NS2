@@ -1,0 +1,2 @@
+grep "for 9:" testResult.txt > ./Latency/9latency.txt 
+

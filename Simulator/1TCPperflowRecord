@@ -1,0 +1,54 @@
+1K Bytes
+-----------------------------
+1TCPperFlow: 82.2s
+
+0.1 second request:83.3s
+0.1 second request: 83.3s
+
+Orchestra: 65.1s
+
+0.1 second request: 65.3s
+
+0.1 second request : 66.5s
+
+
+2KB 
+
+1TCPperFlow
+
+0.1 second request:84.1s
+
+Orchestra
+
+0.1 second request: 65.8s 
+
+4KB
+1TCPperFlow:84.5s
+
+Orchestra: 67.1s
+=====================================
+Non-persistent
+1KB
+
+Orchestra: 67.2s
+
+2KB
+Orchestra: 66.6s
+
+
+10Bytes
+------------------------------
+1TCPperFlow start from 100s
+
+0.1 second request: 86.5s
+0.05 second request: 88.3s
+
+
+Ochestra start from 100s
+
+0.1 second request: 78.8s
+0.05 second request: 66.3s 
+
+
+
+

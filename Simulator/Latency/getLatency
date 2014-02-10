@@ -1,0 +1,10 @@
+grep "0 node" all.txt > ./0latency.txt 
+grep "1 node" all.txt > ./1latency.txt 
+grep "2 node" all.txt > ./2latency.txt 
+grep "3 node" all.txt > ./3latency.txt 
+grep "4 node" all.txt > ./4latency.txt 
+grep "5 node" all.txt > ./5latency.txt 
+grep "6 node" all.txt > ./6latency.txt 
+grep "7 node" all.txt > ./7latency.txt 
+grep "8 node" all.txt > ./8latency.txt  
+grep "9 node" all.txt > ./9latency.txt 
