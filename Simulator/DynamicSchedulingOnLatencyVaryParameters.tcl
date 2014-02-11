@@ -40,16 +40,16 @@ set fout(7) [open Result/ds_out7.txt w]
 set fout(8) [open Result/ds_out8.txt w]
 set fout(9) [open Result/ds_out9.txt w]
 
-set latencyFile [open ./Latency/parameter/4xData.txt w]
+set latencyFile [open ./Latency/parameter/4xBW.txt w]
 
 set dataUnit 1525.0
 set recordPerFlow 50
 set nodeNum 10
 set threshold 0.1
 set terminationT 0.001
-set dataMagnifier 40000.0
-set low_bandwidth 10Mb
-set high_bandwidth 30Mb
+set dataMagnifier 20000.0
+set low_bandwidth 40Mb
+set high_bandwidth 120Mb
 
 
 
