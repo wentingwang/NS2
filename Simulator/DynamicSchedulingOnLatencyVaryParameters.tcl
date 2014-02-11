@@ -40,14 +40,14 @@ set fout(7) [open Result/ds_out7.txt w]
 set fout(8) [open Result/ds_out8.txt w]
 set fout(9) [open Result/ds_out9.txt w]
 
-set latencyFile [open Latency/all.txt w]
+set latencyFile [open ./Latency/parameter/4xData.txt w]
 
 set dataUnit 1525.0
 set recordPerFlow 50
 set nodeNum 10
-set threshold 0.6
-set terminationT 0.015
-set dataMagnifier 10000.0
+set threshold 0.1
+set terminationT 0.001
+set dataMagnifier 40000.0
 set low_bandwidth 10Mb
 set high_bandwidth 30Mb
 
@@ -173,6 +173,7 @@ set currentTCPNum 0
 set prevDerivative 0
 set currentDerivative 0
 set safepoint 0
+set safepointLatency 0
 set safepointTCP 0
 
 proc setRemainingData { i  j  data } {
@@ -241,7 +242,7 @@ proc recordLatency { i latency } {
 
 
 proc dynamicSchedule {} {
-	global tcpAssign latencyAverage recordPerFlow totalLatencyAverage safepoint currentDerivative prevDerivative currentLatency lastLatency currentTCPNum lastTCPNum safepointTCP
+	global tcpAssign latencyAverage recordPerFlow totalLatencyAverage safepoint currentDerivative prevDerivative currentLatency lastLatency currentTCPNum lastTCPNum safepointTCP safepointLatency
 	set ns [Simulator instance]
 
 	#Set the time after which the procedure should be called again
@@ -254,20 +255,24 @@ proc dynamicSchedule {} {
 	set currentLatency $totalLatencyAverage
 
 	set prevDerivative $safepoint
-	puts "currentLatency:$currentLatency lastLatency:$lastLatency currentTCPNum:$currentTCPNum lastTCPNum:$lastTCPNum safepointTCP:$safepointTCP"
+	puts "currentLatency:$currentLatency lastLatency:$lastLatency currentTCPNum:$currentTCPNum lastTCPNum:$lastTCPNum safepointTCP:$lastTCPNum"
 	set currentDerivative [derivative $currentLatency $currentTCPNum $lastLatency $lastTCPNum]
 	puts "prevDerevative:$prevDerivative currentDerivative:$currentDerivative"
-	if {$prevDerivative==0} {
+	if { $prevDerivative == 0 } {
 		set sd 0
 	} else {
-		set sd  [expr [expr abs($currentDerivative - $prevDerivative)] / $prevDerivative ]
-	}
+               # if { $currentDerivative > $prevDerivative } {
+		    set sd  [expr [expr  $currentDerivative - $prevDerivative] / $prevDerivative ]
+	#	} else { 
+         #           set sd 0
+          #      }
+       }
 	puts "secord derivative: $sd"
 
 	if { [needReassign $sd]==1 } {
 		$ns at [expr $now+$time] "dynamicSchedule"
 		
-		if { [takeoff $sd] == 1 } {
+		if { [takeoff $sd $currentDerivative] == 1 } {
 			#reduce TCP connection #
 			decreaseTCP
 		} else {
@@ -277,19 +282,27 @@ proc dynamicSchedule {} {
 	}	
 }
 proc needReassign { sd } {
-	global ns LatencyRecordCount LatencyAverageRecord totalLatencyRecord continueDecrease decrease ns threshold terminationT
+	global ns nodeNum finishTime LatencyRecordCount LatencyAverageRecord totalLatencyRecord continueDecrease decrease ns threshold terminationT
 	set now [$ns now]
-	if { $now<190 && [expr abs($sd - $threshold) > $terminationT]} {
+        set completionTime 0
+        for { set i 0 } {$i < $nodeNum } { incr i } {
+            # puts "finishTime($i):$finishTime($i)"
+              if { $completionTime < $finishTime($i) } {
+                   set completionTime $finishTime($i)
+              }
+        }
+	puts "current completon Time: $completionTime now: $now"
+	if { [expr $now - 1] <= $completionTime  &&  [expr abs($sd - $threshold)] > $terminationT  } {
 		return 1
 	} else {
 		return 2
 	}
 }
 
-proc takeoff { sd } {
-	global 	safepoint prevDerivative currentDerivative lastLatency currentLatency lastTCPNum currentTCPNum safepointTCP threshold
+proc takeoff { sd  currentD} {
+	global 	safepoint prevDerivative safepointLatency currentDerivative lastLatency currentLatency lastTCPNum currentTCPNum safepointTCP threshold
 	
-	if { $sd > $threshold && $sd<20} {
+	if { [expr $sd > $threshold ] || $currentD<0} {
 		#decrease
 		puts "return 1 need to decrease tcp"
 		set lastLatency $currentLatency
@@ -299,6 +312,7 @@ proc takeoff { sd } {
 		#increase
 		puts "return 2 need to increase tcp"
 		set safepoint $currentDerivative
+                set safepointLatency $currentLatency
 		set safepointTCP $currentTCPNum 
 		set lastLatency $currentLatency
 		set lastTCPNum $currentTCPNum
@@ -308,8 +322,12 @@ proc takeoff { sd } {
 }
 
 proc derivative { currentL currentTCP lastL lastTCP } {
-	set x [expr [expr abs($currentL-$lastL)] / [expr abs($currentTCP-$lastTCP)]]
-	return $x
+        if { $currentTCP != $lastTCP } {
+	    set x [expr [expr $currentL-$lastL] / [expr $currentTCP-$lastTCP]]
+        } else {
+            set x 0
+        }
+        return $x
 }
 proc decreaseTCP {} {
 	global data dataUnit tcpAssign remainingData ftp tcp sink n nodeNum ns currentTCPNum
@@ -343,7 +361,7 @@ proc decreaseTCP {} {
 
 proc increaseTCP {} {
 	global data dataUnit tcpAssign remainingData ftp tcp sink n nodeNum ns currentTCPNum
-	set dataUnit [expr $dataUnit / 2 ]
+	set dataUnit [expr $dataUnit /2 ]
 	set currentTCPNum 0
 	set now [$ns now]
 	for {set i 0} {$i < $nodeNum} {incr i} {
@@ -358,6 +376,14 @@ proc increaseTCP {} {
 				if { $x == 0 } {
 					set x 1				
 				}
+#				while { $x == $originalTCP } {
+ #                                    set dataUnit [expr $dataUnit - 100 ]
+  #                                   set x [expr round( $data($j,$i)/ $dataUnit)]
+   #                                  if {$x == 0 } {
+    #                                      set x 1
+     #                                }
+#				     puts "$dataUnit;$x;$originalTCP"
+ #                               }
 				set tcpAssign($j,$i) $x
 				set currentTCPNum [expr $currentTCPNum + $x]
 				set dataTransfer [expr $remainingData($j,$i)/$tcpAssign($j,$i)]
@@ -586,8 +612,8 @@ $ns at 0.1 "uniformWorkload"
 #$ns at 0.0 "setAverageLatencyRecord"
 $ns at 100.0 "initialAverageLatency"
 $ns at 105.0 "dynamicSchedule"
-$ns at 250.0 "printFinish"
-$ns at 250.0 "finish"
+$ns at 700.0 "printFinish"
+$ns at 700.0 "finish"
 
 $ns run
 
